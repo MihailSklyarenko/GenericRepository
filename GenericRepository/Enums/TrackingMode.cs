@@ -1,4 +1,4 @@
-﻿namespace GenericRepository.Helpers;
+﻿namespace GenericRepository.Enums;
 
 public enum TrackingMode
 {
