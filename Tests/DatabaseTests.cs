@@ -1,4 +1,4 @@
-using GenericRepository;
+using GenericRepository.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
@@ -42,7 +42,7 @@ namespace Tests
             await _repository.AddAsync(entity);
             await _repository.SaveChangesAsync();
 
-            var user = await _repository.FirstOrDefaultAsync<TestUser>(x => x.Name == "test1");
+            var user = await _repository.FirstOrDefaultAsync(x => x.Name == "test1");
 
             Assert.True(user.Id == 1);
         }
@@ -62,10 +62,10 @@ namespace Tests
                 }
             };
 
-            await _repository.AddAsync<TestUser>(users);
+            await _repository.AddAsync(users);
             await _repository.SaveChangesAsync();
 
-            var allUsers = await _repository.SelectByConditionAsync<TestUser>(x => x.Id > 0);
+            var allUsers = await _repository.SelectByConditionAsync(x => x.Id > 0);
 
             Assert.Collection(users,
                 x => Assert.Equal("test1", x.Name),

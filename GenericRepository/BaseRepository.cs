@@ -5,172 +5,131 @@ using System.Linq.Expressions;
 
 namespace GenericRepository;
 
-public class BaseRepository<TContext, TEntity> where TContext : DbContext
+public class BaseRepository<TEntity> where TEntity : class
 {
-    private readonly TContext _context;
-    public BaseRepository(TContext context)
+    private readonly DbContext _context;
+    public BaseRepository(DbContext context)
     {
         _context = context;
     }
 
-    public async Task<TEntity> AddAsync<TEntity>(TEntity entity, 
-        CancellationToken token = default) 
-        where TEntity : class
+    public async Task<TEntity> AddAsync(TEntity entity, CancellationToken token = default)
     {
-        var task = await GetDbSet<TEntity>(TrackingMode.TrackAll)
-            .AddAsync(entity);
+        var task = await GetDbSet(TrackingMode.TrackAll).AddAsync(entity, token);
         return task.Entity;
     }
 
-    public Task AddAsync<TEntity>(IEnumerable<TEntity> entities, 
-        CancellationToken token = default) where TEntity : class => 
-            GetDbSet<TEntity>(TrackingMode.TrackAll).AddRangeAsync(entities, token);
+    public Task AddAsync(IEnumerable<TEntity> entities, CancellationToken token = default) => GetDbSet(TrackingMode.TrackAll).AddRangeAsync(entities, token);
 
-    public TEntity Update<TEntity>(TEntity entity) where TEntity : class => 
-        GetDbSet<TEntity>(TrackingMode.TrackAll).Update(entity).Entity;
+    public TEntity Update(TEntity entity) => GetDbSet(TrackingMode.TrackAll).Update(entity).Entity;
 
-    public void Update<TEntity>(IEnumerable<TEntity> entities) where TEntity : class =>
-        GetDbSet<TEntity>(TrackingMode.TrackAll).UpdateRange(entities);
+    public void Update(IEnumerable<TEntity> entities) => GetDbSet(TrackingMode.TrackAll).UpdateRange(entities);
 
-    public void PhysicalDelete<TEntity>(TEntity entity) where TEntity : class => 
-        GetDbSet<TEntity>(TrackingMode.TrackAll).Remove(entity);
+    public void PhysicalDelete(TEntity entity) => GetDbSet(TrackingMode.TrackAll).Remove(entity);
 
-    public void PhysicalDelete<TEntity>(IEnumerable<TEntity> entities) where TEntity : class =>
-        GetDbSet<TEntity>(TrackingMode.TrackAll).RemoveRange(entities);
+    public void PhysicalDelete(IEnumerable<TEntity> entities) => GetDbSet(TrackingMode.TrackAll).RemoveRange(entities);
 
-    public Task<TEntity[]> SelectByConditionAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default)
-        where TEntity : class
     {
-        return GetBaseQuery<TEntity>(tracking)
+        return GetBaseQuery(tracking)
             .Where(predicate)
             .ToArrayAsync(token);
     }
 
-    public Task<TEntity[]> SelectByConditionAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Expression<Func<TEntity, object>>[] includes)
-        where TEntity : class
     {
         return GetBaseQuery(tracking, includes)
             .Where(predicate)
             .ToArrayAsync(token);
     }
 
-    public Task<TEntity[]> SelectByConditionAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
-        where TEntity : class
     {
         return GetBaseQueryWithIncludes(tracking, includes)
             .Where(predicate)
             .ToArrayAsync(token);
     }
 
-    public Task<TEntity?> FirstOrDefaultAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default)
-        where TEntity : class
     {
-        return GetBaseQuery<TEntity>(tracking)
+        return GetBaseQuery(tracking)
             .Where(predicate)
             .FirstOrDefaultAsync(token);
     }
 
-    public Task<TEntity?> FirstOrDefaultAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Expression<Func<TEntity, object>>[] includes)
-        where TEntity : class
     {
         return GetBaseQuery(tracking, includes)
             .FirstOrDefaultAsync(predicate, token);
     }
 
-    public Task<TEntity?> FirstOrDefaultIncludeAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity?> FirstOrDefaultIncludeAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
-        where TEntity : class
     {
         return GetBaseQueryWithIncludes(tracking, includes)
             .FirstOrDefaultAsync(predicate, token);
     }
 
-    public Task<TEntity?> SingleOrDefaultAsync<TEntity>(TrackingMode tracking = TrackingMode.NoTracking,
+    public Task<TEntity?> SingleOrDefaultAsync(TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Expression<Func<TEntity, object>>[] includes)
-        where TEntity : class
     {
         return GetBaseQuery(tracking, includes)
             .SingleOrDefaultAsync(token);
     }
 
-    public Task<TEntity?> SingleOrDefaultAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity?> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Expression<Func<TEntity, object>>[] includes)
-        where TEntity : class
     {
         return GetBaseQuery(tracking, includes)
             .SingleOrDefaultAsync(predicate, token);
     }
 
-    public Task<TEntity?> SingleOrDefaultIncludeAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity?> SingleOrDefaultIncludeAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
-        where TEntity : class
     {
         return GetBaseQueryWithIncludes(tracking, includes)
             .SingleOrDefaultAsync(predicate, token);
     }
 
-    public Task<int> CountAsync<TEntity>(CancellationToken token = default)
-        where TEntity : class
-    {
-        return GetDbSet<TEntity>(TrackingMode.NoTracking)
-            .CountAsync(token);
-    }
+    public Task<int> CountAsync(CancellationToken token = default) => GetDbSet().CountAsync(token);
 
-    public Task<int> CountAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
-        CancellationToken token = default)
-        where TEntity : class
-    {
-        return GetDbSet<TEntity>(TrackingMode.NoTracking)
-            .CountAsync(predicate, token);
-    }
+    public Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken token = default) => GetDbSet().CountAsync(predicate, token);
+    
+    public Task<bool> AnyAsync(CancellationToken token = default) => GetDbSet().AnyAsync(token);
 
-    public Task<bool> AnyAsync<TEntity>(CancellationToken token = default) where TEntity : class
-    {
-        return GetDbSet<TEntity>(TrackingMode.NoTracking)
-            .AnyAsync(token);
-    }
-
-    public Task<bool> AnyAsync<TEntity>(Expression<Func<TEntity, bool>> predicate,
-        CancellationToken token = default)
-        where TEntity : class
-    {
-        return GetDbSet<TEntity>(TrackingMode.NoTracking)
-            .AnyAsync(predicate, token);
-    }
+    public Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken token = default) => GetDbSet().AnyAsync(predicate, token);
 
     public virtual Task<int> SaveChangesAsync(CancellationToken token = default)
     {
         return _context.SaveChangesAsync(token);
     }
 
-    private IQueryable<TEntity> GetBaseQuery<TEntity>(TrackingMode trackingMode = TrackingMode.NoTracking)
-        where TEntity : class => GetDbSet<TEntity>();
+    private IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking) => GetDbSet(trackingMode);
 
-    private IQueryable<TEntity> GetBaseQuery<TEntity>(TrackingMode trackingMode = TrackingMode.NoTracking,
+    private IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking,
         params Expression<Func<TEntity, object>>[] includes)
-        where TEntity : class
     {
-        var query = GetBaseQuery<TEntity>(trackingMode);
+        var query = GetBaseQuery(trackingMode);
 
         if (includes != null)
         {
@@ -183,11 +142,10 @@ public class BaseRepository<TContext, TEntity> where TContext : DbContext
         return query;
     }
 
-    private IQueryable<TEntity> GetBaseQueryWithIncludes<TEntity>(TrackingMode trackingMode = TrackingMode.NoTracking,
+    private IQueryable<TEntity> GetBaseQueryWithIncludes(TrackingMode trackingMode = TrackingMode.NoTracking,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
-        where TEntity : class
     {
-        var query = GetBaseQuery<TEntity>(trackingMode);
+        var query = GetBaseQuery(trackingMode);
 
         if (includes != null)
         {
@@ -200,7 +158,7 @@ public class BaseRepository<TContext, TEntity> where TContext : DbContext
         return query;
     }
 
-    private DbSet<TEntity> GetDbSet<TEntity>(TrackingMode trackingMode = TrackingMode.NoTracking) where TEntity : class
+    private DbSet<TEntity> GetDbSet(TrackingMode trackingMode = TrackingMode.NoTracking)
     {
         _context.ChangeTracker.QueryTrackingBehavior = (trackingMode == TrackingMode.TrackAll)
             ? QueryTrackingBehavior.TrackAll
