@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace GenericRepository;
 
-public class BaseRepository<TContext> where TContext : DbContext
+public class BaseRepository<TContext, TEntity> where TContext : DbContext
 {
     private readonly TContext _context;
     public BaseRepository(TContext context)
