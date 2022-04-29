@@ -1,7 +1,10 @@
 ﻿using GenericRepository.Enums;
+using GenericRepository.Models.Sorting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
+using GenericRepository.Enums.Sorting;
+using System.Reflection;
 
 namespace GenericRepository;
 
@@ -39,6 +42,17 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
+        IEnumerable<SortingParameter> sorting,
+        TrackingMode tracking = TrackingMode.NoTracking,
+        CancellationToken token = default)
+    {
+        var filteredQuery = GetBaseQuery(tracking).Where(predicate);
+        var sorteredQuery = Sort(filteredQuery, sorting);
+
+        return sorteredQuery.ToArrayAsync(token);
+    }
+
+    public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Expression<Func<TEntity, object>>[] includes)
@@ -49,6 +63,17 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
+        IEnumerable<SortingParameter> sorting,
+        TrackingMode tracking = TrackingMode.NoTracking,
+        CancellationToken token = default,
+        params Expression<Func<TEntity, object>>[] includes)
+    {
+        var filteredQuery = GetBaseQuery(tracking, includes).Where(predicate);
+        var sorteredQuery = Sort(filteredQuery, sorting);
+        return sorteredQuery.ToArrayAsync(token);
+    }
+
+    public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
@@ -56,6 +81,17 @@ public class BaseRepository<TEntity> where TEntity : class
         return GetBaseQueryWithIncludes(tracking, includes)
             .Where(predicate)
             .ToArrayAsync(token);
+    }
+
+    public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
+        IEnumerable<SortingParameter> sorting,
+        TrackingMode tracking = TrackingMode.NoTracking,
+        CancellationToken token = default,
+        params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
+    {
+        var filteredQuery = GetBaseQueryWithIncludes(tracking, includes).Where(predicate);
+        var sorteredQuery = Sort(filteredQuery, sorting);
+        return sorteredQuery.ToArrayAsync(token);
     }
 
     public Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate,
@@ -165,6 +201,46 @@ public class BaseRepository<TEntity> where TEntity : class
             : QueryTrackingBehavior.NoTracking;
 
         return _context.Set<TEntity>();
+    }
+
+    private IQueryable<TEntity> Sort(IQueryable<TEntity> filteredQuery, IEnumerable<SortingParameter> sortings)
+    {
+        var orderedQuery = filteredQuery;
+        if (sortings?.Any() == true)
+        {
+            var type = typeof(TEntity);
+            var orderByCommand = sortings.First().Direction == SortDirection.Ascending
+                ? "OrderBy"
+                : "OrderByDescending";
+
+            var isOrderedQuery = false;
+            foreach (var sorting in sortings)
+            {
+                var property =
+                    type.GetProperty(sorting.FieldName, BindingFlags.FlattenHierarchy
+                    | BindingFlags.Instance
+                    | BindingFlags.Public);
+
+                if (property == null)
+                {
+                    throw new Exception($"Property {sorting.FieldName} is not found");
+                }
+                if (isOrderedQuery)
+                {
+                    orderByCommand = sorting.Direction == SortDirection.Ascending
+                        ? "ThenBy"
+                        : "ThenByDescending";
+                }
+                var parameter = Expression.Parameter(type, "p");
+                var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+                var orderByExpression = Expression.Lambda(propertyAccess, parameter);
+                var resultExpression = Expression.Call(typeof(Queryable), orderByCommand, new Type[] { type, property.PropertyType },
+                    orderedQuery.Expression, Expression.Quote(orderByExpression));
+                orderedQuery = orderedQuery.Provider.CreateQuery<TEntity>(resultExpression);
+                isOrderedQuery = true;
+            }
+        }
+        return orderedQuery;
     }
 
     public void Dispose()
