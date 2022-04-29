@@ -12,6 +12,8 @@ namespace Tests.Infrastructure.Database.Contexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<TestUser>();
+            modelBuilder.Entity<TestCompany>();
+            modelBuilder.Entity<TestCity>();
         }
     }
 }

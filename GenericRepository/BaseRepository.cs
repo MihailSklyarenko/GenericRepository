@@ -33,8 +33,8 @@ public class BaseRepository<TEntity> where TEntity : class
     public void PhysicalDelete(IEnumerable<TEntity> entities) => GetDbSet(TrackingMode.TrackAll).RemoveRange(entities);
 
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
-        CancellationToken token = default)
+        CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking)
     {
         return GetBaseQuery(tracking)
             .Where(predicate)
@@ -43,8 +43,8 @@ public class BaseRepository<TEntity> where TEntity : class
 
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         IEnumerable<SortingParameter> sorting,
-        TrackingMode tracking = TrackingMode.NoTracking,
-        CancellationToken token = default)
+        CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking)
     {
         var filteredQuery = GetBaseQuery(tracking).Where(predicate);
         var sorteredQuery = Sort(filteredQuery, sorting);
@@ -53,8 +53,8 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Expression<Func<TEntity, object>>[] includes)
     {
         return GetBaseQuery(tracking, includes)
@@ -64,8 +64,8 @@ public class BaseRepository<TEntity> where TEntity : class
 
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         IEnumerable<SortingParameter> sorting,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Expression<Func<TEntity, object>>[] includes)
     {
         var filteredQuery = GetBaseQuery(tracking, includes).Where(predicate);
@@ -74,8 +74,8 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
     {
         return GetBaseQueryWithIncludes(tracking, includes)
@@ -83,10 +83,10 @@ public class BaseRepository<TEntity> where TEntity : class
             .ToArrayAsync(token);
     }
 
-    public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
+    public Task<TEntity[]> SelectByConditionIncludeAsync(Expression<Func<TEntity, bool>> predicate,
         IEnumerable<SortingParameter> sorting,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
     {
         var filteredQuery = GetBaseQueryWithIncludes(tracking, includes).Where(predicate);
@@ -95,8 +95,8 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
-        CancellationToken token = default)
+        CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking)
     {
         return GetBaseQuery(tracking)
             .Where(predicate)
@@ -104,8 +104,8 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Expression<Func<TEntity, object>>[] includes)
     {
         return GetBaseQuery(tracking, includes)
@@ -113,8 +113,8 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity?> FirstOrDefaultIncludeAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
     {
         return GetBaseQueryWithIncludes(tracking, includes)
@@ -130,8 +130,8 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity?> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Expression<Func<TEntity, object>>[] includes)
     {
         return GetBaseQuery(tracking, includes)
@@ -139,8 +139,8 @@ public class BaseRepository<TEntity> where TEntity : class
     }
 
     public Task<TEntity?> SingleOrDefaultIncludeAsync(Expression<Func<TEntity, bool>> predicate,
-        TrackingMode tracking = TrackingMode.NoTracking,
         CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
     {
         return GetBaseQueryWithIncludes(tracking, includes)
@@ -203,18 +203,18 @@ public class BaseRepository<TEntity> where TEntity : class
         return _context.Set<TEntity>();
     }
 
-    private IQueryable<TEntity> Sort(IQueryable<TEntity> filteredQuery, IEnumerable<SortingParameter> sortings)
+    private IQueryable<TEntity> Sort(IQueryable<TEntity> query, IEnumerable<SortingParameter> sortingParameters)
     {
-        var orderedQuery = filteredQuery;
-        if (sortings?.Any() == true)
+        var result = query;
+        if (sortingParameters?.Any() == true)
         {
             var type = typeof(TEntity);
-            var orderByCommand = sortings.First().Direction == SortDirection.Ascending
+            var orderByCommand = sortingParameters.First().Direction == SortDirection.Ascending
                 ? "OrderBy"
                 : "OrderByDescending";
 
             var isOrderedQuery = false;
-            foreach (var sorting in sortings)
+            foreach (var sorting in sortingParameters)
             {
                 var property =
                     type.GetProperty(sorting.FieldName, BindingFlags.FlattenHierarchy
@@ -235,12 +235,12 @@ public class BaseRepository<TEntity> where TEntity : class
                 var propertyAccess = Expression.MakeMemberAccess(parameter, property);
                 var orderByExpression = Expression.Lambda(propertyAccess, parameter);
                 var resultExpression = Expression.Call(typeof(Queryable), orderByCommand, new Type[] { type, property.PropertyType },
-                    orderedQuery.Expression, Expression.Quote(orderByExpression));
-                orderedQuery = orderedQuery.Provider.CreateQuery<TEntity>(resultExpression);
+                    result.Expression, Expression.Quote(orderByExpression));
+                result = result.Provider.CreateQuery<TEntity>(resultExpression);
                 isOrderedQuery = true;
             }
         }
-        return orderedQuery;
+        return result;
     }
 
     public void Dispose()
