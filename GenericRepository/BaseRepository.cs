@@ -11,6 +11,7 @@ namespace GenericRepository;
 public class BaseRepository<TEntity> where TEntity : class
 {
     private readonly DbContext _context;
+
     public BaseRepository(DbContext context)
     {
         _context = context;
@@ -22,7 +23,8 @@ public class BaseRepository<TEntity> where TEntity : class
         return task.Entity;
     }
 
-    public Task AddAsync(IEnumerable<TEntity> entities, CancellationToken token = default) => GetDbSet(TrackingMode.TrackAll).AddRangeAsync(entities, token);
+    public Task AddAsync(IEnumerable<TEntity> entities, CancellationToken token = default) =>
+        GetDbSet(TrackingMode.TrackAll).AddRangeAsync(entities, token);
 
     public TEntity Update(TEntity entity) => GetDbSet(TrackingMode.TrackAll).Update(entity).Entity;
 
@@ -149,30 +151,30 @@ public class BaseRepository<TEntity> where TEntity : class
 
     public Task<int> CountAsync(CancellationToken token = default) => GetDbSet().CountAsync(token);
 
-    public Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken token = default) => GetDbSet().CountAsync(predicate, token);
-    
+    public Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken token = default) =>
+        GetDbSet().CountAsync(predicate, token);
+
     public Task<bool> AnyAsync(CancellationToken token = default) => GetDbSet().AnyAsync(token);
 
-    public Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken token = default) => GetDbSet().AnyAsync(predicate, token);
+    public Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken token = default) =>
+        GetDbSet().AnyAsync(predicate, token);
 
     public virtual Task<int> SaveChangesAsync(CancellationToken token = default)
     {
         return _context.SaveChangesAsync(token);
     }
 
-    private IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking) => GetDbSet(trackingMode);
+    private IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking) =>
+        GetDbSet(trackingMode);
 
     private IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking,
         params Expression<Func<TEntity, object>>[] includes)
     {
         var query = GetBaseQuery(trackingMode);
 
-        if (includes != null)
+        foreach (var include in includes)
         {
-            foreach (var include in includes)
-            {
-                query = query.Include(include);
-            }
+            query = query.Include(include);
         }
 
         return query;
@@ -183,12 +185,9 @@ public class BaseRepository<TEntity> where TEntity : class
     {
         var query = GetBaseQuery(trackingMode);
 
-        if (includes != null)
+        foreach (var include in includes)
         {
-            foreach (var include in includes)
-            {
-                query = include(query);
-            }
+            query = include(query);
         }
 
         return query;
