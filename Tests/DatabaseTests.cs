@@ -18,7 +18,7 @@ namespace Tests
     public class DatabaseTests : BaseTest<Startup>
     {
         private readonly TestDbContext _context;
-        private readonly UserRepository _repository;
+        private readonly IUserRepository _repository;
 
         public override async Task InitializeAsync()
         {
@@ -32,7 +32,7 @@ namespace Tests
         public DatabaseTests()
         {
             _context = ServiceProvider.GetRequiredService<TestDbContext>();
-            _repository = ServiceProvider.GetRequiredService<UserRepository>();
+            _repository = ServiceProvider.GetRequiredService<IUserRepository>();
         }
 
         [Fact]

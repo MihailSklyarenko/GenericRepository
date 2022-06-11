@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Tests.Infrastructure.Database.Contexts;
+using Tests.Infrastructure.Database.Entities;
 using Tests.Infrastructure.Database.Repositories;
 using Tests.Infrastructure.DependencyInjection.Interfaces;
 
@@ -22,6 +23,8 @@ namespace Tests.Infrastructure.DependencyInjection.Implementation
 
         private void RegisterDatabase(IServiceCollection services)
         {
+            services.AddScoped<IUserRepository, UserRepository>();
+
             services.AddDbContext<TestDbContext>(options =>
             {
                 options.EnableSensitiveDataLogging();

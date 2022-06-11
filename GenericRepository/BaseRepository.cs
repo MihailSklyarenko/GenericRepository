@@ -1,11 +1,12 @@
 ﻿using GenericRepository.Enums;
+using GenericRepository.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 
 namespace GenericRepository;
 
-public class BaseRepository<TEntity> : IDisposable
+public class BaseRepository<TEntity> : IBaseRepository<TEntity>
     where TEntity : class
 {
     private readonly DbContext _context;
@@ -31,7 +32,7 @@ public class BaseRepository<TEntity> : IDisposable
         return _context.SaveChangesAsync(token);
     }
 
-    protected DbSet<TEntity> GetDbSet(TrackingMode trackingMode = TrackingMode.NoTracking)
+    public DbSet<TEntity> GetDbSet(TrackingMode trackingMode = TrackingMode.NoTracking)
     {
         _context.ChangeTracker.QueryTrackingBehavior = (trackingMode == TrackingMode.TrackAll)
             ? QueryTrackingBehavior.TrackAll
@@ -40,10 +41,10 @@ public class BaseRepository<TEntity> : IDisposable
         return _context.Set<TEntity>();
     }
 
-    protected IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking) =>
+    public IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking) =>
         GetDbSet(trackingMode);
 
-    protected IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking,
+    public IQueryable<TEntity> GetBaseQuery(TrackingMode trackingMode = TrackingMode.NoTracking,
         params Expression<Func<TEntity, object>>[] includes)
     {
         var query = GetBaseQuery(trackingMode);
@@ -56,7 +57,7 @@ public class BaseRepository<TEntity> : IDisposable
         return query;
     }
 
-    protected IQueryable<TEntity> GetBaseQueryWithIncludes(TrackingMode trackingMode = TrackingMode.NoTracking,
+    public IQueryable<TEntity> GetBaseQueryWithIncludes(TrackingMode trackingMode = TrackingMode.NoTracking,
         params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
     {
         var query = GetBaseQuery(trackingMode);
