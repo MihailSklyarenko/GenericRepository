@@ -1,15 +1,20 @@
-﻿using GenericRepository.Enums;
+﻿using System.Linq.Expressions;
+using System.Reflection;
+
+using GenericRepository.Entities;
+using GenericRepository.Enums;
 using GenericRepository.Enums.Sorting;
+using GenericRepository.Interfaces;
 using GenericRepository.Models.Sorting;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace GenericRepository;
 
-public class Repository<TEntity> : BaseRepository<TEntity>
-    where TEntity : class
+public class Repository<TEntity, TKey> : BaseRepository<TEntity>, IRepository<TEntity, TKey>
+    where TEntity : class, IEntity<TKey>
+    where TKey : struct
 {
     public Repository(DbContext context) : base(context)
     {}
@@ -19,6 +24,33 @@ public class Repository<TEntity> : BaseRepository<TEntity>
         var task = await GetDbSet(TrackingMode.TrackAll).AddAsync(entity, token);
         return task.Entity;
     }
+
+    public Task<TEntity?> GetByIdAsync(TKey id,
+    CancellationToken token = default,
+    TrackingMode tracking = TrackingMode.NoTracking)
+    {
+        return GetBaseQuery(tracking)
+            .SingleOrDefaultAsync(x => x.Id.Equals(id), token);
+    }
+
+    public Task<TEntity?> GetByIdAsync(TKey id,
+    CancellationToken token = default,
+    TrackingMode tracking = TrackingMode.NoTracking,
+    params Expression<Func<TEntity, object>>[] includes)
+    {
+        return GetBaseQuery(tracking, includes)
+            .SingleOrDefaultAsync(x => x.Id.Equals(id), token);
+    }
+
+    public Task<TEntity?> GetByIdIncludeAsync(TKey id,
+    CancellationToken token = default,
+    TrackingMode tracking = TrackingMode.NoTracking,
+    params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes)
+    {
+        return GetBaseQueryWithIncludes(tracking, includes)
+            .SingleOrDefaultAsync(x => x.Id.Equals(id), token);
+    }
+
     public Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate,
         CancellationToken token = default,
         TrackingMode tracking = TrackingMode.NoTracking)

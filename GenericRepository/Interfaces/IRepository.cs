@@ -1,15 +1,29 @@
 ﻿using GenericRepository.Enums;
 using GenericRepository.Models.Sorting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 
 namespace GenericRepository.Interfaces;
 
-public interface IRepository<TEntity> : IBaseRepository<TEntity>
+public interface IRepository<TEntity, TKey> : IBaseRepository<TEntity>
     where TEntity : class
+    where TKey : struct
 {
     Task<TEntity> AddAsync(TEntity entity, CancellationToken token = default);
+
+    Task<TEntity?> GetByIdAsync(TKey id,
+        CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking);
+
+    Task<TEntity?> GetByIdAsync(TKey id,
+        CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
+        params Expression<Func<TEntity, object>>[] includes);
+
+    Task<TEntity?> GetByIdIncludeAsync(TKey id,
+        CancellationToken token = default,
+        TrackingMode tracking = TrackingMode.NoTracking,
+        params Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>[] includes);
 
     Task<TEntity[]> SelectByConditionAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken token = default, TrackingMode tracking = TrackingMode.NoTracking);
 

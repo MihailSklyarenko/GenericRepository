@@ -1,8 +1,9 @@
-﻿namespace Tests.Infrastructure.Database.Entities
+﻿using GenericRepository.Entities;
+
+namespace Tests.Infrastructure.Database.Entities
 {
-    public class TestUser
+    public class TestUser : BaseEntity<int>
     {
-        public int Id { get; set; }
         public string Name { get; set; }
 
         public int? CompanyId { get; set; }

@@ -104,6 +104,9 @@ namespace Tests
 
             var userWithId1 = await _repository.SingleOrDefaultAsync(x => x.Id == 1);
             Assert.True(userWithId1.Id == 1);
+
+            var userById = await _repository.GetByIdAsync(1);
+            Assert.True(userById.Id == 1);
         }
 
         [Fact]
